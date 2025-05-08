@@ -1,3 +1,5 @@
+mod middlewares;
+
 use axum::{
     extract::Path, http::{Request, StatusCode},
     middleware::Next,
@@ -16,7 +18,7 @@ async fn main() {
     let user_routes = Router::new()
         .route("/:id", get(handler))
         .route("/", post(create_user))
-        .layer(axum::middleware::from_fn(authenticate));
+        .layer(axum::middleware::from_fn(middlewares::authentication::authenticate));
     let team_routes = Router::new().route("/team/:id", get(handler));
     let full_captures_param = Router::new().route("/:version/:id", get(handler_full_param));
 
@@ -50,17 +52,4 @@ struct CreateUser {
 
 async fn create_user(Json(payload): Json<CreateUser>) -> String {
     format!("Received user: {}, age: {}", payload.name, payload.age)
-}
-
-async fn authenticate(
-    req: Request<axum::body::Body>,
-    next: Next,
-) -> Result<axum::response::Response, StatusCode> {
-    if let Some(auth_header) = req.headers().get(AUTHORIZATION) {
-        if auth_header == "Bearer ngon" {
-            return Ok(next.run(req).await);
-        }
-    }
-
-    Err(StatusCode::UNAUTHORIZED)
 }
