@@ -1,24 +1,21 @@
 mod middlewares;
-
+mod handlers;
 use axum::{
-    extract::Path, http::{Request, StatusCode},
-    middleware::Next,
+    extract::Path,
     routing::get,
     routing::post,
     Json,
     Router,
 };
-// use std::collections::HashMap;
 use serde::Deserialize;
-
-use axum::http::header::AUTHORIZATION;
+use crate::handlers::jsonwebtoken::create_jwt;
 
 #[tokio::main]
 async fn main() {
     let user_routes = Router::new()
         .route("/:id", get(handler))
-        .route("/", post(create_user))
-        .layer(axum::middleware::from_fn(middlewares::authentication::authenticate));
+        .layer(axum::middleware::from_fn(middlewares::authentication::authenticate))
+        .route("/", post(create_user));
     let team_routes = Router::new().route("/team/:id", get(handler));
     let full_captures_param = Router::new().route("/:version/:id", get(handler_full_param));
 
@@ -51,5 +48,6 @@ struct CreateUser {
 }
 
 async fn create_user(Json(payload): Json<CreateUser>) -> String {
-    format!("Received user: {}, age: {}", payload.name, payload.age)
+    let jwt = create_jwt(&payload.name);
+    format!("Received user: {}, age: {}, jwt: {}", payload.name, payload.age, jwt)
 }
