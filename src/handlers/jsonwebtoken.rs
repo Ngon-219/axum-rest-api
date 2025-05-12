@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use jsonwebtoken::{encode, Header, EncodingKey, TokenData, decode, DecodingKey, Validation};
 use std::time::{SystemTime, UNIX_EPOCH};
 use axum::http::StatusCode;
+use axum::http::Request;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {

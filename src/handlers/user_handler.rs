@@ -4,7 +4,6 @@ use axum::Json;
 use axum::response::IntoResponse;
 use crate::{AppState, CreateUser};
 use crate::dtos::sign_in_dto::SignInDto;
-use crate::models::user_model::User;
 use crate::repository::user_repository::UserRepository;
 use crate::dtos::sign_up_dto::SignUpDto;
 
