@@ -9,7 +9,7 @@ pub struct Claims {
     exp: usize,
 }
 
-pub fn create_jwt(user_id: &str) -> String {
+pub fn create_jwt(email: String) -> String {
     dotenv::dotenv().ok();
     let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET not found");
     let expiration = SystemTime::now()
@@ -18,7 +18,7 @@ pub fn create_jwt(user_id: &str) -> String {
         .as_secs() + 60 * 60 * 7; // token sống 7 ngày
 
     let claims = Claims {
-        sub: user_id.to_string(),
+        sub: email.to_string(),
         exp: expiration as usize,
     };
 

@@ -1,5 +1,9 @@
 mod middlewares;
 mod handlers;
+mod models;
+mod repository;
+mod dtos;
+
 use axum::{
     extract::Path,
     routing::get,
@@ -9,9 +13,32 @@ use axum::{
 };
 use serde::Deserialize;
 use crate::handlers::jsonwebtoken::create_jwt;
+use sqlx::postgres::PgPoolOptions;
+use crate::handlers::user_handler::UserHandler;
+
+#[derive(Clone, Debug)]
+pub struct AppState {
+    pub pool: sqlx::PgPool,
+}
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), sqlx::Error> {
+    dotenv::dotenv().ok();
+    
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await?;
+    
+    println!("Connected to database");
+    
+    let app_state = AppState { pool };
+    
+    let authentication = Router::new()
+        .route("/sign-up", post(UserHandler::sign_up))
+        .route("/sign-in", post(UserHandler::sign_in));
+    
     let user_routes = Router::new()
         .route("/:id", get(handler))
         .layer(axum::middleware::from_fn(middlewares::authentication::authenticate))
@@ -22,12 +49,15 @@ async fn main() {
     let api_routes = Router::new()
         .nest("/users", user_routes)
         .nest("/", team_routes)
-        .nest("/handle", full_captures_param);
+        .nest("/handle", full_captures_param)
+        .nest("/authentication", authentication)
+        .with_state(app_state.clone());
 
     let app = Router::new().nest("/api", api_routes);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    axum::serve(listener, app).await?;
+    Ok(())
 }
 
 // handle param
@@ -48,6 +78,6 @@ struct CreateUser {
 }
 
 async fn create_user(Json(payload): Json<CreateUser>) -> String {
-    let jwt = create_jwt(&payload.name);
-    format!("Received user: {}, age: {}, jwt: {}", payload.name, payload.age, jwt)
+    let jwt = create_jwt(payload.name);
+    format!("Received jwt: {}", jwt)
 }
