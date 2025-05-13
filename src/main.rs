@@ -8,6 +8,7 @@ use axum::{
     extract::Path,
     routing::get,
     routing::post,
+    routing::delete,
     Json,
     Router,
 };
@@ -44,6 +45,8 @@ async fn main() -> Result<(), sqlx::Error> {
     let to_do_list_routes = Router::new()
         .route("/", post(ToDoListHandler::create_to_do_list))
         .route("/", patch(ToDoListHandler::update_to_do_list))
+        .route("/", get(ToDoListHandler::get_to_do_list))
+        .route("/:id", delete(ToDoListHandler::delete_to_do_list))
         .layer(axum::middleware::from_fn(middlewares::authentication::authenticate));
 
     let user_routes = Router::new()

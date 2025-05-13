@@ -6,7 +6,7 @@ use axum::http::header::AUTHORIZATION;
 use crate::handlers::jsonwebtoken::decode_jwt;
 
 pub async fn authenticate(
-    req: Request<axum::body::Body>,
+    mut req: Request<axum::body::Body>,
     next: Next,
 ) -> Result<axum::response::Response, StatusCode> {
     if let Some(auth_header) = req.headers().get(AUTHORIZATION) {
@@ -17,6 +17,9 @@ pub async fn authenticate(
             .ok_or(StatusCode::UNAUTHORIZED)?;
 
         let _token_data = decode_jwt(token.to_string()).map_err(|_| StatusCode::UNAUTHORIZED)?;
+        let claims = _token_data.claims;
+        println!("{:?}", claims.sub);
+        req.extensions_mut().insert(claims.sub.to_string());
         return Ok(next.run(req).await);
     }
 
